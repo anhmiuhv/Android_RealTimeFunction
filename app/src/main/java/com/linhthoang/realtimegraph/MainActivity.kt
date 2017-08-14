@@ -3,6 +3,7 @@ package com.linhthoang.realtimegraph
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import com.linhthoang.realtimefunction.Interpolator
 import com.linhthoang.realtimefunction.RealtimeFunctionView
 
 class MainActivity : AppCompatActivity() {
@@ -11,7 +12,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         FunctionView = findViewById(R.id.fv) as? RealtimeFunctionView
-//        FunctionView?.manager?.interpolator = Interpolator.Linear()
+        FunctionView?.refreshRate = 15
+        FunctionView?.manager?.interpolator = Interpolator.Linear()
 
     }
     val start = System.currentTimeMillis()
@@ -22,9 +24,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun update() {
         FunctionView?.let {
-            it.manager.addPoint((20f * Math.sin(2 * Math.PI * 0.5 * ((System.currentTimeMillis() - start) / 1000f))).toFloat(), 1000)
+            it.manager.addPoint((10f * Math.sin(2 * Math.PI * 0.5 * ((System.currentTimeMillis() - start) / 1000f))).toFloat(), 15)
         }
-        Handler(mainLooper).postDelayed({update()}, 1000)
+        Handler(mainLooper).postDelayed({update()}, 15)
     }
 
 }

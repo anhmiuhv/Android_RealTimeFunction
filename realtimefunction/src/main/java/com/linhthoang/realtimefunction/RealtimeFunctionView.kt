@@ -21,6 +21,9 @@ import android.view.View
 
 open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : View(context, attributeSet) {
 
+    /**
+     * paint for the line
+     */
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = lineColor
         style = Paint.Style.STROKE
@@ -29,7 +32,13 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
     }
 
     private val mData = PointList()
+    /**
+     * background color
+     */
     var background_color = Color.BLACK
+    /**
+     * scroll rate (higher is faster)
+     */
     var scrollRate = 30f
     set(value) {
         field = capWithin(value + value % 2, 5f, 500f)
@@ -39,6 +48,14 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
     private val mScaleDetector = ScaleGestureDetector(context, Listener())
     private var lineWidth = dp2px(resources, 10f)
     private var lineColor = Color.RED
+    /**
+     * refresh rate for updating the value point.
+     * For examples, if refreshrate = 33 then each value point correspond to 33 ms
+     */
+    var refreshRate = 33
+    set(value) {
+        manager.refreshRate = value
+    }
     private inner class Listener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
             mScaleFactor *= detector!!.getScaleFactor();
@@ -58,6 +75,9 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
         }
     }
 
+    /**
+     * this is for adding th data point and change the value interpolator
+     */
     val manager = Manager()
 
 
@@ -68,25 +88,32 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
         manager.mHeight = h
 
     }
-
+    private var startUpdate = false
+    private fun update() {
+        handler.post {
+            mData.add(manager.getCurrentHeight(points[points.size - 1]))
+            points = mData.getArray()
+            handler.postDelayed({
+                invalidate()
+                update()
+                }, refreshRate.toLong())
+        }
+    }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         if (canvas == null) return
         canvas.save()
-        val start = System.currentTimeMillis()
         canvas.scale(1f,mScaleFactor, (width / 2).toFloat(), (height /2).toFloat())
         canvas.drawColor(background_color)
         paint.strokeWidth = lineWidth
         paint.color = lineColor
         canvas.drawLines(points, paint)
-        handler.post {
-            mData.add(manager.getCurrentHeight(points[points.size - 1]))
-            points = mData.getArray()
-            val end = System.currentTimeMillis()
-            val diff = if (end - start > 33) 0 else 33 - (end - start)
-            handler.postDelayed({invalidate()}, diff)
+        if (!startUpdate) {
+            startUpdate = true
+            update()
         }
+
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -95,20 +122,24 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
         return true;
     }
 
-    class Manager() {
+    class Manager {
         /**
          * how prev value change to the new value
          */
         var interpolator: Interpolator = Interpolator.Cosine()
+        /**
+         * the range of value (-interval < value < interval)
+         */
         var interval = 20f
             set(value) {
                 if (value < 0) field = 0.1f else field = value
             }
 
         internal var mHeight = 300
+        internal var refreshRate = 33
         private val queue: Queue<Point> = Queue()
         private var currentPoint: Point? = null
-        private var currentTime = -33
+        private var currentTime = -refreshRate
         private var startPoint: Point? = null
 
         /**
@@ -123,7 +154,7 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
         }
 
         internal fun getCurrentHeight(prevHeight: Float): Float {
-            currentTime += 33
+            currentTime += refreshRate
             if (currentPoint == null || currentTime > currentPoint!!.time) {
                 val oldPoint = currentPoint
                 currentPoint = queue.pop()?.apply { time = currentTime + timeInterval }

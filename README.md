@@ -17,3 +17,14 @@ manager.addPoint(10f)
 manager.addPoint(-4f)
 manager.addPoint(12f)
 ```
+
+Customizable attributes:
+
+```
+<declare-styleable name="RealtimeFunctionView">
+    <attr name="lineWidth" format="dimension" />
+    <attr name="background_color" format="color" />
+    <attr name="line_color" format="color" />
+    <attr name="interval" format="float" />
+</declare-styleable>
+```
