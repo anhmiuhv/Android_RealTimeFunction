@@ -91,12 +91,13 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
     private var startUpdate = false
     private fun update() {
         handler.post {
+            val start = System.currentTimeMillis()
             mData.add(manager.getCurrentHeight(points[points.size - 1]))
             points = mData.getArray()
             handler.postDelayed({
                 invalidate()
                 update()
-                }, refreshRate.toLong())
+                }, capWithin(refreshRate - start.toFloat(), 0f, refreshRate.toFloat()).toLong())
         }
     }
 
@@ -147,7 +148,7 @@ open class RealtimeFunctionView(context: Context, attributeSet: AttributeSet) : 
          * @param height data point value
          * @param timeInterval the delta time to change to this value
          */
-        fun addPoint(height: Float, timeInterval: Long = 1000) {
+        fun addPoint(height: Float, timeInterval: Long = 33) {
             if (timeInterval <= 0) throw TimeIntervalValueException()
             val mHeight = capWithin(height, -interval, interval)
             queue.push(Point(toCanvasSpace(mHeight), 0, timeInterval))
