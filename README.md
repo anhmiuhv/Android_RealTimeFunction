@@ -39,7 +39,7 @@ manager.addPoint(12f)
 ```kotlin
 manager.interpolator = Interpolator.Cosine()
 //... or
-manager.interpolator = Interpolator.Cosine()
+manager.interpolator = Interpolator.Linear()
 ```
 
 ##### Add the amount of time to get to the data value
